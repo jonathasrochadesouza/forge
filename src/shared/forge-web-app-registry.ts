@@ -29,6 +29,14 @@ export const FORGE_WEB_APP_REGISTRY: readonly ForgeWebAppEntry[] = [
     allowedHosts: ['teams.microsoft.com', 'login.microsoftonline.com']
   },
   {
+    id: 'outlook-calendar',
+    title: 'Calendário',
+    url: 'https://outlook.office.com/calendar',
+    icon: 'calendar',
+    category: 'comunicacao',
+    allowedHosts: ['outlook.office.com', 'outlook.office365.com', 'login.microsoftonline.com']
+  },
+  {
     id: 'openwebui',
     title: 'OpenWebUI',
     url: 'http://localhost:3000',

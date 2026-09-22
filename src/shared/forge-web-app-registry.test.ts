@@ -21,6 +21,7 @@ describe('forge-web-app-registry', () => {
 
   it('getForgeWebAppEntry resolves a known id and returns undefined otherwise', () => {
     expect(getForgeWebAppEntry('teams')?.title).toBe('Teams')
+    expect(getForgeWebAppEntry('outlook-calendar')?.title).toBe('Calendário')
     expect(getForgeWebAppEntry('does-not-exist')).toBeUndefined()
   })
 
