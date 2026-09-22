@@ -8,6 +8,7 @@ Format: `<file> — <what we changed> — <why> — <date>`
 | File | Change | Why | Date |
 |---|---|---|---|
 | package.json | name→forge, description, homepage, author, version | rebrand | 2026-09-19 |
+| src/renderer/src/components/sidebar/SidebarNav.tsx | added `<ForgeWebAppSidebarEntry />` import + render call after `<SidebarTaskNavButton />` | no existing extension slot for sidebar entries; needed to expose FORGE-16 pinned web apps list (user-approved exception) | 2026-09-22 |
 
 No other upstream file has been modified. Keep it that way — if you add an entry,
 you must have first confirmed the file is on the Mutation Whitelist in FORGE.md.
