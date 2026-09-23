@@ -1,0 +1,87 @@
+# Forge-only Windows build: packages an unsigned Windows installer/executable
+# from any branch on demand, without SignPath. Additive file (not present in
+# upstream orca), so it does not touch the mutation whitelist.
+name: Forge Windows Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      note:
+        description: Optional note for this build (shows in the run title)
+        type: string
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  build-win:
+    runs-on: windows-2022
+    timeout-minutes: 90
+    env:
+      NODE_OPTIONS: --max-old-space-size=4096
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Setup pnpm
+        uses: pnpm/setup@v2
+        with:
+          install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: package.json
+          cache: pnpm
+          cache-dependency-path: |
+            pnpm-lock.yaml
+            mobile/pnpm-lock.yaml
+
+      - name: Cache electron-builder downloads
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~\AppData\Local\electron\Cache
+            ~\AppData\Local\electron-builder\Cache
+          key: electron-builder-win-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            electron-builder-win-
+
+      - name: Install dependencies
+        uses: nick-fields/retry@v4
+        with:
+          timeout_minutes: 10
+          max_attempts: 3
+          retry_wait_seconds: 30
+          command: pnpm install --frozen-lockfile
+
+      - uses: ./.github/actions/install-mobile-dependencies
+
+      - name: Build app
+        run: pnpm build:release
+
+      - name: Package Windows app (NSIS installer, unsigned)
+        shell: pwsh
+        run: |
+          node config/scripts/ensure-native-runtime.mjs --runtime=electron
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          pnpm exec electron-builder --config config/electron-builder.config.cjs --win --publish never
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          if (-not (Test-Path 'dist/win-unpacked/Orca.exe')) {
+            throw 'electron-builder --win did not produce dist/win-unpacked/Orca.exe'
+          }
+
+      - name: Upload installer and unpacked app
+        uses: actions/upload-artifact@v7
+        with:
+          name: forge-windows-build-${{ github.run_id }}
+          path: |
+            dist/*.exe
+            dist/*.exe.blockmap
+            dist/latest.yml
+            dist/win-unpacked/**
+          if-no-files-found: error
+          retention-days: 14
