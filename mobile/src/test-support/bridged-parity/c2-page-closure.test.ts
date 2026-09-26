@@ -1,4 +1,4 @@
-import { readFileSync, readdirSync } from 'node:fs'
+import { readdirSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { C1_PAGE_CLOSURE } from './c1-page-closure'
@@ -6,6 +6,7 @@ import { C2_PAGE_CLOSURE } from './c2-page-closure'
 import { C2_TASK_SOURCE_CLOSURE_FAMILIES } from './c2-task-source-closure-families'
 import { C2_WORK_ITEM_CLOSURE_FAMILIES } from './c2-work-item-closure-families'
 import { C5_PAGE_CLOSURE } from './c5-page-closure'
+import { pinsFromSource } from './page-closure-pin-source'
 import { BRIDGED_PARITY_EXCLUSIONS } from './divergence-classes'
 import {
   pageClosureDrift,
@@ -18,47 +19,6 @@ import { readGolden } from '../rpc-recording/golden-recording'
 
 const GOLDENS = resolve(import.meta.dirname, '../../../rpc-foundation/goldens')
 const C1_SOURCE = resolve(import.meta.dirname, 'c1-page-closure.ts')
-
-/**
- * A pin table read back out of its file's own text, which a spread cannot launder.
- *
- * `C2_PAGE_CLOSURE` is composed by spreading `C1_PAGE_CLOSURE`, so comparing the two is vacuous —
- * a hand-edited inherited entry in C2's table would be read back as C1's and agree with itself.
- * Reading C1's source is the independent half of that comparison.
- *
- * The formatter wraps a long entry onto two lines, an id alone and its verdict indented beneath, so
- * both forms are handled: a reader that saw only the single-line form is what once dropped three
- * `result-absent-stream-release` pins while its mismatch list stayed empty.
- */
-function pinsFromSource(path: string): Record<string, Record<string, string>> {
-  const table: Record<string, Record<string, string>> = {}
-  let family: Record<string, string> | undefined
-  let wrappedId: string | undefined
-  for (const line of readFileSync(path, 'utf8').split('\n')) {
-    const opened = /^ {2}'([^']+)': \{/.exec(line)?.[1]
-    if (opened !== undefined) {
-      family = {}
-      table[opened] = family
-      wrappedId = undefined
-      continue
-    }
-    const whole = /^ {4}'([^']+)': '([^']+)'/.exec(line)
-    const verdict = whole?.[2]
-    if (whole?.[1] !== undefined && verdict !== undefined && family !== undefined) {
-      family[whole[1]] = verdict
-      wrappedId = undefined
-      continue
-    }
-    const wrapped = /^\s+'([^']+)'/.exec(line)?.[1]
-    if (wrappedId !== undefined && wrapped !== undefined && family !== undefined) {
-      family[wrappedId] = wrapped
-      wrappedId = undefined
-      continue
-    }
-    wrappedId = /^ {4}'([^']+)':\s*$/.exec(line)?.[1]
-  }
-  return table
-}
 
 /** The run a corpus that diverged exactly as the pin says would hand the rule. */
 function asPinned(): Map<string, PageClosureObservation> {
@@ -81,11 +41,11 @@ describe('the C2 page closure', () => {
    * *family* entering the closure — a scenario recorded at a site the route newly imports — is
    * invisible until someone re-derives the closure by hand, as C1's and C5's pins are too.
    */
-  it('is the census the design named: 70 families, 266 goldens', () => {
+  it('is the census the design named: 68 families, 257 goldens', () => {
     const goldens = Object.values(C2_PAGE_CLOSURE).flatMap((family) => Object.keys(family))
     expect({ families: Object.keys(C2_PAGE_CLOSURE).length, goldens: goldens.length }).toEqual({
-      families: 70,
-      goldens: 266
+      families: 68,
+      goldens: 257
     })
     expect(new Set(goldens).size).toBe(goldens.length)
   })
@@ -100,8 +60,8 @@ describe('the C2 page closure', () => {
    */
   it('pins how many goldens land in each class, which a per-id walk cannot see move', () => {
     expect(pageClosureTotals(C2_PAGE_CLOSURE)).toEqual({
-      identical: 114,
-      'result-absent-settlement': 118,
+      identical: 108,
+      'result-absent-settlement': 115,
       'params-undefined': 29,
       'result-absent-stream-release': 3,
       'write-ordinal': 2
@@ -129,7 +89,7 @@ describe('the C2 page closure', () => {
     expect({
       families: Object.keys(committed).length,
       pins: Object.values(committed).flatMap(Object.keys).length
-    }).toEqual({ families: 22, pins: 103 })
+    }).toEqual({ families: 20, pins: 94 })
     for (const [family, pinned] of Object.entries(committed)) {
       expect(C2_PAGE_CLOSURE[family], family).toEqual(pinned)
     }
@@ -140,7 +100,7 @@ describe('the C2 page closure', () => {
     // Two page closures that share a family share the goldens in it. Were one to be re-derived and
     // the other inherited, this is the assertion that would not hold.
     const shared = Object.keys(C5_PAGE_CLOSURE).filter((family) => family in C2_PAGE_CLOSURE)
-    expect(shared.length).toBe(22)
+    expect(shared.length).toBe(20)
     for (const family of shared) {
       expect(C2_PAGE_CLOSURE[family], family).toEqual(C5_PAGE_CLOSURE[family])
     }
@@ -200,7 +160,7 @@ describe('the C2 page closure', () => {
 
   it('excludes a closure golden only into a class that has a reason', () => {
     const exclusions = pageClosureExclusions(C2_PAGE_CLOSURE)
-    expect(exclusions.length).toBe(152)
+    expect(exclusions.length).toBe(149)
     expect(exclusions.filter(([, name]) => BRIDGED_PARITY_EXCLUSIONS[name] === undefined)).toEqual(
       []
     )
@@ -261,7 +221,7 @@ describe('reading a run against the C2 pin', () => {
     expect(pageClosureRunTotals(C2_PAGE_CLOSURE, run)).not.toEqual(
       pageClosureTotals(C2_PAGE_CLOSURE)
     )
-    expect([...run].filter(([, seen]) => seen.family in C2_PAGE_CLOSURE).length).toBe(265)
+    expect([...run].filter(([, seen]) => seen.family in C2_PAGE_CLOSURE).length).toBe(256)
   })
 
   it('ignores every golden outside the closure, which is most of the corpus', () => {
