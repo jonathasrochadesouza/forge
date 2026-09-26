@@ -34,12 +34,16 @@ afterEach(() => {
 })
 
 describe('electron-builder dev-channel identity', () => {
-  it('keeps the SignPath publisherName on stable Windows builds', () => {
+  // Forge fork: stable Windows builds are unsigned, so no publisherName is
+  // advertised — electron-updater skips Authenticode verification when the
+  // name is absent, which is what lets unsigned Forge builds update themselves.
+  it('ships stable Windows builds unsigned, publishing to the Forge feed', () => {
     const config = loadConfigWithEnv({})
 
-    expect(config.win.signtoolOptions.publisherName).toBe('SignPath Foundation')
+    expect(config.win.signtoolOptions.publisherName).toBeUndefined()
     expect(config.win.verifyUpdateCodeSignature).toBeUndefined()
-    expect(config.publish.repo).toBe('orca')
+    expect(config.publish.repo).toBe('forge')
+    expect(config.publish.owner).toBe('jonathasrochadesouza')
     expect(config.publish.releaseType).toBe('release')
   })
 
@@ -62,7 +66,7 @@ describe('electron-builder dev-channel identity', () => {
       const config = loadConfigWithEnv(env)
       expect(typeof config.win.signtoolOptions.sign).toBe('function')
     }
-    expect(loadConfigWithEnv({}).win.signtoolOptions.publisherName).toBe('SignPath Foundation')
+    expect(loadConfigWithEnv({}).win.signtoolOptions.publisherName).toBeUndefined()
     expect(loadConfigWithEnv(WIN_ADHOC_ENV).win.signtoolOptions.publisherName).toBeUndefined()
   })
 

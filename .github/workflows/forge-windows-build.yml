@@ -70,8 +70,8 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           pnpm exec electron-builder --config config/electron-builder.config.cjs --win --publish never
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          if (-not (Test-Path 'dist/win-unpacked/Orca.exe')) {
-            throw 'electron-builder --win did not produce dist/win-unpacked/Orca.exe'
+          if (-not (Test-Path 'dist/win-unpacked/Forge.exe')) {
+            throw 'electron-builder --win did not produce dist/win-unpacked/Forge.exe'
           }
 
       - name: Upload installer and unpacked app

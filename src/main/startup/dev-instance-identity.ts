@@ -2,8 +2,10 @@ import { createHash } from 'node:crypto'
 import path from 'node:path'
 import type { AppIdentity } from '../../shared/app-identity'
 
-const BASE_APP_NAME = 'Orca'
-const BASE_APP_USER_MODEL_ID = 'com.stablyai.orca'
+// Why 'Forge'/'com.forge.ide': must not match the installed upstream Orca's name/AUMID, or a
+// packaged Forge build shares Orca's taskbar grouping and notification identity on Windows.
+const BASE_APP_NAME = 'Forge'
+const BASE_APP_USER_MODEL_ID = 'com.forge.ide'
 const MAX_LABEL_LENGTH = 80
 
 export type DevInstanceIdentity = AppIdentity & {
@@ -11,7 +13,7 @@ export type DevInstanceIdentity = AppIdentity & {
   // Why: drives app.setName → the macOS safeStorage Keychain item name
   // ("<appName> Safe Storage"). Kept stable across dev branches (unlike the
   // per-branch `name`) so every dev instance shares one Keychain key instead of
-  // creating a new one per branch and re-prompting. Distinct from prod's 'Orca'.
+  // creating a new one per branch and re-prompting. Distinct from prod's 'Forge'.
   appName: string
 }
 
@@ -90,7 +92,7 @@ export function getDevInstanceIdentity(
 
   return {
     name: dockTitle,
-    // Why: one stable Keychain key ('Orca Dev Safe Storage') for all dev
+    // Why: one stable Keychain key ('Forge Dev Safe Storage') for all dev
     // branches; the per-branch identity still shows via `name` (window title,
     // app menu, renderer label).
     appName: `${BASE_APP_NAME} Dev`,
