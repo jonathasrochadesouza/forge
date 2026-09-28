@@ -4,7 +4,10 @@
 import { webviewRegistry } from '@/components/browser-pane/host-guest/webview-registry'
 import { useAppStore } from '@/store'
 import { FLOATING_TERMINAL_WORKTREE_ID } from '../../../../shared/constants'
-import { listForgeWebAppEntries, type ForgeWebAppEntry } from '../../../../shared/forge-web-app-registry'
+import {
+  listForgeWebAppEntries,
+  type ForgeWebAppEntry
+} from '../../../../shared/forge-web-app-registry'
 import { decideForgeWebAppNavigation } from '../../../../shared/forge-web-app-navigation-policy'
 
 const tabsWithNavigationGuard = new Set<string>()

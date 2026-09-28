@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { SetupGuideSidebarEntry } from './SetupGuideSidebarEntry'
 import { SidebarTaskNavButton } from './SidebarTaskNavButton'
+import { ForgeWebAppFavoriteSidebarEntry } from '../../forge/web-apps/ForgeWebAppFavoriteSidebarEntry'
 import { ForgeWebAppSidebarEntry } from '../../forge/web-apps/ForgeWebAppSidebarEntry'
 import { HideSidebarMenu } from './sidebar-nav-controls'
 import { translate } from '@/i18n/i18n'
@@ -122,6 +123,7 @@ const SidebarNav = React.memo(function SidebarNav() {
       </button>
       <SetupGuideSidebarEntry />
       <SidebarTaskNavButton />
+      <ForgeWebAppFavoriteSidebarEntry />
       <ForgeWebAppSidebarEntry />
       {showArtifactsButton ? (
         <ContextMenu>

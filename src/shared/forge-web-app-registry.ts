@@ -3,13 +3,15 @@
 
 export type ForgeWebAppCategory = 'comunicacao' | 'produtividade' | 'ia' | 'engenharia' | 'outros'
 
+/** Resolved to a renderer brand-glyph component by forge-web-app-brand-icons.tsx. */
+export type ForgeWebAppIconId = 'teams' | 'outlook-calendar' | 'openwebui'
+
 export type ForgeWebAppEntry = {
   /** Stable identifier; also used to derive the isolated session profile. */
   id: string
   title: string
   url: string
-  /** lucide-react icon name, resolved by the renderer's icon map. */
-  icon: string
+  iconId: ForgeWebAppIconId
   category: ForgeWebAppCategory
   /**
    * Hostnames allowed to load in-app (exact match or subdomain of one of these).
@@ -24,7 +26,7 @@ export const FORGE_WEB_APP_REGISTRY: readonly ForgeWebAppEntry[] = [
     id: 'teams',
     title: 'Teams',
     url: 'https://teams.microsoft.com',
-    icon: 'teams',
+    iconId: 'teams',
     category: 'comunicacao',
     allowedHosts: ['teams.microsoft.com', 'login.microsoftonline.com']
   },
@@ -32,7 +34,7 @@ export const FORGE_WEB_APP_REGISTRY: readonly ForgeWebAppEntry[] = [
     id: 'outlook-calendar',
     title: 'Calendário',
     url: 'https://outlook.office.com/calendar',
-    icon: 'calendar',
+    iconId: 'outlook-calendar',
     category: 'comunicacao',
     allowedHosts: ['outlook.office.com', 'outlook.office365.com', 'login.microsoftonline.com']
   },
@@ -40,7 +42,7 @@ export const FORGE_WEB_APP_REGISTRY: readonly ForgeWebAppEntry[] = [
     id: 'openwebui',
     title: 'OpenWebUI',
     url: 'http://localhost:3000',
-    icon: 'openwebui',
+    iconId: 'openwebui',
     category: 'ia'
   }
 ]

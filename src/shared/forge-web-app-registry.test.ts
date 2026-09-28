@@ -19,6 +19,13 @@ describe('forge-web-app-registry', () => {
     }
   })
 
+  it('every entry carries a typed iconId', () => {
+    const iconIds = FORGE_WEB_APP_REGISTRY.map((entry) => entry.iconId)
+    expect(iconIds).toContain('teams')
+    expect(iconIds).toContain('outlook-calendar')
+    expect(iconIds).toContain('openwebui')
+  })
+
   it('getForgeWebAppEntry resolves a known id and returns undefined otherwise', () => {
     expect(getForgeWebAppEntry('teams')?.title).toBe('Teams')
     expect(getForgeWebAppEntry('outlook-calendar')?.title).toBe('Calendário')
