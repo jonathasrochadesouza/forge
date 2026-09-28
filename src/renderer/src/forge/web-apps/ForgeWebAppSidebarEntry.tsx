@@ -50,7 +50,7 @@ export function ForgeWebAppSidebarEntry(): React.JSX.Element {
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent side="right" align="start" sideOffset={8} className="w-56">
-        <DropdownMenuLabel className="text-[11px] font-medium text-muted-foreground">
+        <DropdownMenuLabel>
           {translate('auto.forge.web-apps.ForgeWebAppSidebarEntry.title', 'Pinned apps')}
         </DropdownMenuLabel>
         {entries.map((entry) => {

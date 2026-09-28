@@ -1,4 +1,4 @@
-import {
+﻿import {
   chmodSync,
   existsSync,
   mkdirSync,
@@ -294,7 +294,7 @@ describe('materializeRelocatedDaemonHost', () => {
     // Any one of them missing means require() cannot reach the addon, and a host
     // that cannot load it runs anyway -- forking a shell per snapshot (#16905).
     materializeRelocatedDaemonHost()
-    const dest = join(localAppDataDir, 'Orca', 'daemon-host', '9.9.9')
+    const dest = join(localAppDataDir, 'Forge', 'daemon-host', '9.9.9')
     expect(getRelocatedDaemonHost()).not.toBeNull()
 
     rmSync(join(dest, relativePath))
@@ -304,7 +304,7 @@ describe('materializeRelocatedDaemonHost', () => {
 
   it('rematerializes a host whose copied addon went missing', () => {
     materializeRelocatedDaemonHost()
-    const dest = join(localAppDataDir, 'Orca', 'daemon-host', '9.9.9')
+    const dest = join(localAppDataDir, 'Forge', 'daemon-host', '9.9.9')
     const relocatedAddon = join(dest, PROCESS_TREE_ADDON_REL)
 
     rmSync(relocatedAddon)
@@ -323,7 +323,7 @@ describe('materializeRelocatedDaemonHost', () => {
     // upgrade changes the version keying this directory, which already forces a
     // rebuild, and nothing else in the mirror is source-verified either.
     materializeRelocatedDaemonHost()
-    const dest = join(localAppDataDir, 'Orca', 'daemon-host', '9.9.9')
+    const dest = join(localAppDataDir, 'Forge', 'daemon-host', '9.9.9')
     const sentinel = join(dest, 'sentinel.txt')
     writeFileSync(sentinel, 'keep')
 
@@ -348,7 +348,7 @@ describe('materializeRelocatedDaemonHost', () => {
 
     expect(materializeRelocatedDaemonHost()).toBeNull()
     // Not even the host root: the source is checked before any directory is made.
-    expect(existsSync(join(localAppDataDir, 'Orca', 'daemon-host'))).toBe(false)
+    expect(existsSync(join(localAppDataDir, 'Forge', 'daemon-host'))).toBe(false)
   })
 
   it('is idempotent: a valid marker short-circuits without recopying', () => {
@@ -382,7 +382,7 @@ describe('materializeRelocatedDaemonHost', () => {
   })
 
   it('does nothing for a packaged host with no asar root (orcad on win32)', () => {
-    // orcad answers isPackaged() true — it is a shipped build — but it is plain Node: no
+    // orcad answers isPackaged() true â€” it is a shipped build â€” but it is plain Node: no
     // asar, no resourcesPath, and no NSIS updater to escape. Relocation staging a copy of
     // an Electron tree that is not there is the isPackaged-honesty defect, and it would
     // silently produce a null host on a path whose failures are meant to be visible.
@@ -513,7 +513,7 @@ describe('pruneOldDaemonHosts', () => {
 
     expect(existsSync(join(root, '1.0.0'))).toBe(true)
     expect(existsSync(join(root, '2.0.0'))).toBe(true)
-    // The reason must reach the field log — an unobservable no-op is undiagnosable.
+    // The reason must reach the field log â€” an unobservable no-op is undiagnosable.
     expect(warnSpy).toHaveBeenCalledWith(
       '[daemon] Skipping daemon-host prune: the daemon runtime directory could not be read'
     )
@@ -570,7 +570,7 @@ describe('pruneOldDaemonHosts', () => {
   it('preserves a host dir for any verdict that is not positively exited', () => {
     const root = join(localAppDataDir, 'Forge', 'daemon-host')
     mkdirSync(join(root, '1.0.0'), { recursive: true })
-    // Why: deliberate out-of-contract cast — deletion must require a positive 'exited' match,
+    // Why: deliberate out-of-contract cast â€” deletion must require a positive 'exited' match,
     // so a future verdict status the prune does not know preserves the host dir, not deletes it.
     const futureVerdict = {
       status: 'suspended',
@@ -595,7 +595,7 @@ describe('pruneOldDaemonHosts', () => {
     const runtimeDir = join(userDataDir, 'daemon')
     mkdirSync(join(root, '1.0.0'), { recursive: true })
     mkdirSync(runtimeDir, { recursive: true })
-    // A tear inside the digits of pid 12345 leaves the prefix 123 — a DIFFERENT pid. Probing
+    // A tear inside the digits of pid 12345 leaves the prefix 123 â€” a DIFFERENT pid. Probing
     // it would attribute an unrelated (here: dead) process's verdict to this record; the
     // writer of a mid-digits tear died mid-write, so quarantine must not consult any probe.
     const pidPath = join(runtimeDir, 'daemon-v7.pid')
@@ -624,7 +624,7 @@ describe('pruneOldDaemonHosts', () => {
     const runtimeDir = join(userDataDir, 'daemon')
     mkdirSync(join(root, '1.0.0'), { recursive: true })
     mkdirSync(runtimeDir, { recursive: true })
-    // Pid 41234 torn to the prefix 4 — the Windows System pid, which answers probes forever.
+    // Pid 41234 torn to the prefix 4 â€” the Windows System pid, which answers probes forever.
     // Trusting it would re-create for this one record the eternal veto pruning must not have.
     const pidPath = join(runtimeDir, 'daemon-v7.pid')
     writeFileSync(pidPath, '{"pid":4')

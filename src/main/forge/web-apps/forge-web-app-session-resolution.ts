@@ -14,14 +14,22 @@ function mappingFilePath(): string {
   return join(getCanonicalUserDataPath(), MAPPING_FILE_NAME)
 }
 
+function isProfileMapping(value: unknown): value is ForgeWebAppProfileMapping {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    Object.values(value).every((entry) => typeof entry === 'string')
+  )
+}
+
 function loadMapping(): ForgeWebAppProfileMapping {
   try {
     const path = mappingFilePath()
     if (!existsSync(path)) {
       return {}
     }
-    const parsed = JSON.parse(readFileSync(path, 'utf-8'))
-    return parsed && typeof parsed === 'object' ? (parsed as ForgeWebAppProfileMapping) : {}
+    const parsed: unknown = JSON.parse(readFileSync(path, 'utf-8'))
+    return isProfileMapping(parsed) ? parsed : {}
   } catch {
     return {}
   }
