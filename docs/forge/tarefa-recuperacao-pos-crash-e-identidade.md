@@ -19,8 +19,8 @@ Escopo técnico  — .git/config e refs (reparo, não código); FORGE-OVERRIDES 
 Critérios de aceite — checklist abaixo.
 Fora de escopo  — Notificação nativa como feature completa (card FE-9), sync diário
                   automatizado (FE-5), pipeline de CI com assinatura.
-Links           — FORGE.md (regra aditiva), FORGE-OVERRIDES.md, docs/forge/plano-tarefas-jira.md,
-                  commit a00cf502e (sync), commit 070ee9387 (identidade).
+Links           — FORGE.md (regra aditiva), FORGE-OVERRIDES.md, commit a00cf502e (sync),
+                  commit 070ee9387 (identidade).
 ```
 
 ## Estado atual (o que já está feito)
@@ -30,7 +30,7 @@ Links           — FORGE.md (regra aditiva), FORGE-OVERRIDES.md, docs/forge/pla
 - [x] Correção em andamento do agente recuperada do working tree e commitada
       (`070ee9387`): appId `com.forge.ide`, productName/executableName `Forge`,
       hooks NSIS, daemon-host em `%LOCALAPPDATA%\Forge`, ProgID `Forge.Markdown`
-- [x] Docs do plano JIRA recommittados (`docs/forge/plano-tarefas-jira.md`)
+- [x] Docs do plano JIRA recommittados; plano removido depois (doc de rascunho, sem card Jira criado)
 - [x] Sync: merge de `upstream/main` (385 commits, até 25/09) em `a00cf502e`;
       3 conflitos resolvidos nos arquivos da whitelist ("ours wins" no feed de publish)
 - [x] Gates verdes: `pnpm tc` pré e pós-sync; 64 testes scoped; lint do diff próprio: 0 findings
