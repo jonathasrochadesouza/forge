@@ -8,9 +8,10 @@ criteria.
 ## What works
 
 - Sign-in and session persistence across app restarts — the tab uses an
-  isolated browser session profile (`src/main/forge/web-apps/forge-web-app-session-resolution.ts`),
-  so cookies/tokens survive a relaunch the same way any isolated Orca browser
-  profile does.
+  isolated browser session profile (resolved renderer-side via
+  `src/renderer/src/forge/web-apps/forge-web-app-session-profile.ts` through
+  the existing `browser:session:*` IPC), so cookies/tokens survive a relaunch
+  the same way any isolated Orca browser profile does.
 - Chat, channels, and the unread-message badge (parsed from the tab title's
   leading `(N)` count, see `src/shared/forge-web-app-unread-count.ts`).
 - Links to other Microsoft domains (e.g. `login.microsoftonline.com` for
@@ -33,6 +34,11 @@ criteria.
   across browser engines; Electron's Chromium build is generally on par with
   desktop Chrome, but this has not been exhaustively verified against every
   Teams web feature.
+- **External-link guard attaches shortly after the tab's webview mounts.**
+  The navigation guard (`forge-web-app-navigation-guard.ts`) re-checks on
+  every store update, so in the rare window between webview mount and the
+  next update a first external link could navigate in-tab instead of
+  opening the system browser. Self-healing; no user action needed.
 - **Confirming or canceling calendar meetings programmatically** is out of
   scope for this integration — it requires the Microsoft Graph API and is
   tracked separately under FE-9.
