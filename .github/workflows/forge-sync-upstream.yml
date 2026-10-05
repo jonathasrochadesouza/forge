@@ -202,6 +202,7 @@ jobs:
           echo "Sync PR: $url" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Record verdict
+        id: verdict
         # Always: the notify job reads the outcome even when the sync failed.
         if: always()
         env:
