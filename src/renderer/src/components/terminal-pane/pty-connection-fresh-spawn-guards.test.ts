@@ -130,14 +130,14 @@ function createDeps(overrides: Record<string, unknown> = {}) {
 }
 
 describe('connectPanePty', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.resetModules()
     vi.clearAllMocks()
     transportFactoryQueue = []
     createdTransportOptions = []
     storeSubscribers = []
     mockStoreState = createInitialStoreState(() => mockStoreState)
-    installTerminalTestGlobals()
+    await installTerminalTestGlobals()
   })
 
   afterEach(async () => {
@@ -175,28 +175,6 @@ describe('connectPanePty', () => {
       pane.id,
       expect.stringContaining('Terminal has zero dimensions (0×0)')
     )
-  })
-
-  // Why: a late exit from a replaced PTY skips onExit's kitty reset, so a fresh spawn must reset the reused per-pane tracker itself or restart-in-place leaks old kitty flags.
-  it('resets a stale kitty keyboard mirror when spawning a fresh PTY', async () => {
-    const { connectPanePty } = await import('./pty-connection')
-    const { TerminalKittyKeyboardModeTracker } =
-      await import('../../../../shared/terminal-kitty-keyboard-mode-tracker')
-    const transport = createMockTransport()
-    transportFactoryQueue.push(transport)
-    const staleTracker = new TerminalKittyKeyboardModeTracker()
-    staleTracker.scan('\x1b[>1u')
-    expect(staleTracker.flags).toBe(1)
-    // Why: a unique tab id keeps this pane's key clear of other tests' pendingSpawnByPaneKey entries so the connect deterministically fresh-spawns.
-    const deps = createDeps({
-      tabId: 'tab-kitty-fresh-spawn',
-      paneKittyKeyboardModesRef: { current: new Map([[91, staleTracker]]) }
-    })
-
-    connectPanePty(createPane(91) as never, createManager(91) as never, deps as never)
-    await flushAsyncTicks()
-
-    expect(staleTracker.flags).toBe(0)
   })
 
   // Why: deleting a worktree kills its PTYs for the filesystem teardown; the

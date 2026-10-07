@@ -38,6 +38,9 @@ export type PtyBufferSnapshot = {
   alternateScreen?: boolean
   /** Authoritative normal buffer paired with an alternate-screen frame. */
   scrollbackAnsi?: string
+  /** `data` starts on the normal buffer and enters alt itself (remote images fold
+   *  their normal buffer in rather than splitting it into `scrollbackAnsi`). */
+  carriesNormalBuffer?: boolean
   /** Trailing incomplete escape sequence main's emulator ingested (a PTY read
    *  ended mid-escape). Must be written LAST — after post-replay resets, right
    *  before post-snapshot live chunks — so the continuation completes it
@@ -65,6 +68,9 @@ export type PtyReplayDataMeta = {
    *  it; the drain replays there and fits back to the pane afterwards. */
   snapshotCols?: number
   snapshotRows?: number
+  /** An image that starts on the normal buffer and enters alt itself; absent for
+   *  raw byte replays such as an SSH relay's ring buffer. */
+  carriesNormalBuffer?: boolean
 }
 
 export type LocalPtySessionMetadata = {
@@ -212,9 +218,13 @@ export type PtyTransport = {
   getRecoveryState?: () => PtyTransportRecoveryState
   /** Starts a fresh connection epoch while preserving the authoritative remote PTY identity. */
   retryRecovery?: () => boolean
+  /** Lets a wrapper retain input when recovery re-enters connect internally. */
+  setConnectForRecovery?: (connect: PtyTransport['connect']) => void
   /** The user dismissed the error surface; the next occurrence of the same message must surface again. */
   notifyErrorSurfaceDismissed?: () => void
   getPtyId: () => string | null
+  /** A connect (spawn or reattach) is still awaiting its PTY id. */
+  isConnectPending?: () => boolean
   getConnectionId?: () => string | null | undefined
   /** The runtime captured by this transport; legacy remote PTY ids do not
    * encode their owner, and current worktree settings may have changed. */
