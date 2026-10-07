@@ -192,10 +192,10 @@ jobs:
           } > "$body_file"
           existing="$(gh pr list --head forge-sync/upstream --state open --json number --jq '.[0].number')"
           if [ -n "$existing" ]; then
-            gh pr edit "$existing" --title "$title" --body-file "$body_file"
+            gh api -X PATCH "repos/$GITHUB_REPOSITORY/pulls/$existing" -F title="$title" -F body=@body_file >/dev/null
             url="$(gh pr view "$existing" --json url --jq .url)"
           else
-            url="$(gh pr create --base forge --head forge-sync/upstream --title "$title" --body-file "$body_file")"
+            url="$(gh api -X POST "repos/$GITHUB_REPOSITORY/pulls" -F title="$title" -F head=forge-sync/upstream -F base=forge -F body=@body_file --jq .html_url)"
           fi
           rm -f "$body_file"
           echo "url=$url" >> "$GITHUB_OUTPUT"
