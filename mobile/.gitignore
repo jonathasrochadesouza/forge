@@ -7,6 +7,8 @@ src/components/pr-sidebar/mermaid-webview-engine.generated.ts
 src/components/pr-sidebar/mermaid-page-engine.generated.ts
 .expo/
 dist/
+.gradle/
+local.properties
 /android/
 /ios/
 *.jks
