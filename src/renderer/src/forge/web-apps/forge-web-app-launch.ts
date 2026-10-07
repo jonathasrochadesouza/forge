@@ -3,7 +3,6 @@
 import { toast } from 'sonner'
 import { FLOATING_TERMINAL_WORKTREE_ID } from '../../../../shared/constants'
 import { TOGGLE_FLOATING_TERMINAL_EVENT } from '@/lib/floating-terminal'
-import { isFloatingWorkspacePanelVisible } from '@/lib/floating-workspace-terminal-actions'
 import { translate } from '@/i18n/i18n'
 import { useAppStore } from '@/store'
 import { getForgeWebAppEntry } from '../../../../shared/forge-web-app-registry'
@@ -11,7 +10,9 @@ import { resolveForgeWebAppSessionProfile } from './forge-web-app-session-profil
 
 function revealFloatingWorkspacePanel(): void {
   requestAnimationFrame(() => {
-    if (!isFloatingWorkspacePanelVisible()) {
+    // Why: upstream #22302 moved the floating panel's open state into the store; the old
+    // DOM helper is gone. Open it only when closed — an open panel must keep its state.
+    if (!useAppStore.getState().floatingWorkspacePanelOpen) {
       window.dispatchEvent(new CustomEvent(TOGGLE_FLOATING_TERMINAL_EVENT))
     }
   })
