@@ -1,4 +1,4 @@
-import { Suspense, useRef } from 'react'
+import { Suspense } from 'react'
 import { lazyWithRetry as lazy } from '@/lib/lazy-with-retry'
 import { translate } from '@/i18n/i18n'
 import Sidebar from '../components/Sidebar'
@@ -6,7 +6,8 @@ import RightSidebar from '../components/right-sidebar'
 import { RecoverableRenderErrorBoundary } from '../components/error-boundaries/RecoverableRenderErrorBoundary'
 import { FloatingTerminalToggleButton } from '../components/floating-terminal/FloatingTerminalToggleButton'
 import { TerminalWorkbenchContainer } from '../components/TerminalWorkbenchContainer'
-import type { VirtualizedScrollAnchor } from '../hooks/useVirtualizedScrollAnchor'
+import { ForgeSecondarySidebarDock } from '../forge/sidebars/ForgeSecondarySidebarDock'
+import { WORKSPACE_TOP_CHROME_HEIGHT } from '../components/sidebar/workspace-chrome-metrics'
 import { TitlebarLeftControls } from './TitlebarLeftControls'
 import { RightSidebarToggle, TitlebarMainStrip } from './TitlebarMainStrip'
 import type { AppChromeLayout } from './use-app-chrome-layout'
@@ -26,18 +27,7 @@ const WorkspaceSpacePage = lazy(() => import('../components/workspace-space/Work
 const MobilePage = lazy(() => import('../components/mobile/MobilePage'))
 const Terminal = lazy(() => import('../components/Terminal'))
 
-type WorktreeSidebarScrollRefs = {
-  scrollOffsetRef: React.MutableRefObject<number>
-  scrollAnchorRef: React.MutableRefObject<VirtualizedScrollAnchor>
-}
-
-function WorktreeSidebar({
-  layout,
-  scrollRefs
-}: {
-  layout: AppChromeLayout
-  scrollRefs: WorktreeSidebarScrollRefs
-}): React.JSX.Element {
+function WorktreeSidebar({ layout }: { layout: AppChromeLayout }): React.JSX.Element {
   return (
     <RecoverableRenderErrorBoundary
       boundaryId="sidebar.worktrees"
@@ -56,10 +46,7 @@ function WorktreeSidebar({
             )
       }
     >
-      <Sidebar
-        worktreeScrollOffsetRef={scrollRefs.scrollOffsetRef}
-        worktreeScrollAnchorRef={scrollRefs.scrollAnchorRef}
-      />
+      <Sidebar />
     </RecoverableRenderErrorBoundary>
   )
 }
@@ -95,10 +82,6 @@ export function AppWorkspaceShell(props: {
   const { layout, floatingWorkspace } = props
   const titlebarLeftControls = <TitlebarLeftControls layout={layout} />
   const titlebarMainStrip = <TitlebarMainStrip layout={layout} />
-  // Why: keep virtualized scroll memory above the sidebar's workspace/landing remount so the left list doesn't restart at scrollTop 0.
-  const scrollOffsetRef = useRef(0)
-  const scrollAnchorRef = useRef<VirtualizedScrollAnchor>(null)
-  const sidebarScrollRefs = { scrollOffsetRef, scrollAnchorRef }
 
   return (
     // Why: workspace activation is a hot path; activeWorktreeId in reset keys would remount whole surfaces during wake.
@@ -147,12 +130,22 @@ export function AppWorkspaceShell(props: {
                   </div>
                   {/* Why: flex-1/min-h-0 slot needed under the fixed 36px header, else the sidebar collapses to content height and loses its scroll viewport. */}
                   <div className="flex min-h-0 flex-1">
-                    <WorktreeSidebar layout={layout} scrollRefs={sidebarScrollRefs} />
+                    <WorktreeSidebar layout={layout} />
                   </div>
                 </div>
               ) : (
-                <WorktreeSidebar layout={layout} scrollRefs={sidebarScrollRefs} />
+                <WorktreeSidebar layout={layout} />
               )
+            ) : null}
+            {/* Why: the forge secondary sidebar is a real flex column between the left sidebar
+            and the content, so it pushes the center the same way the left sidebar does; it
+            follows the same visibility rule as the left sidebar itself. */}
+            {layout.showSidebar ? (
+              <ForgeSecondarySidebarDock
+                reserveTitlebarHeight={
+                  layout.leftTitlebarChromeLayout.shouldMount ? WORKSPACE_TOP_CHROME_HEIGHT : 0
+                }
+              />
             ) : null}
             <div className="flex flex-col flex-1 min-w-0 min-h-0 overflow-hidden">
               {/* Why: automations/artifacts own their page headers; the stacked titlebar would be an empty 36px stripe. */}

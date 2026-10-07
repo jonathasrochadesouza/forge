@@ -86,6 +86,12 @@ vi.mock('./useSidebarProjectDrop', () => ({
   })
 }))
 
+// Why stubbed: the focused-project card reads the real selectors' projections; these
+// tests cover the rail chrome, not the card's store wiring (covered in its own test).
+vi.mock('../../forge/sidebars/ForgeProjectsFocusFooterCard', () => ({
+  ForgeProjectsFocusFooterCard: () => null
+}))
+
 vi.mock('./useWorkspaceBoardPanel', () => ({
   useWorkspaceBoardPanel: () => ({
     ...mocks.panel,
@@ -120,15 +126,11 @@ function setSidebarState(settings: GlobalSettings, statusBarVisible = true): voi
 }
 
 function renderSidebar(): string {
-  return renderToStaticMarkup(
-    <Sidebar worktreeScrollOffsetRef={{ current: 0 }} worktreeScrollAnchorRef={{ current: null }} />
-  )
+  return renderToStaticMarkup(<Sidebar />)
 }
 
 function sidebarElement(): ReactNode {
-  return (
-    <Sidebar worktreeScrollOffsetRef={{ current: 0 }} worktreeScrollAnchorRef={{ current: null }} />
-  )
+  return <Sidebar />
 }
 
 beforeEach(() => {

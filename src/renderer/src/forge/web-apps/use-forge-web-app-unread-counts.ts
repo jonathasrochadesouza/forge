@@ -33,7 +33,8 @@ export function useForgeWebAppUnreadCounts(): Record<string, number> {
   return useAppStore(
     useShallow((state) =>
       computeForgeWebAppUnreadCounts(
-        state.browserTabsByWorktree[FLOATING_TERMINAL_WORKTREE_ID] ?? []
+        // Optional chain: the sidebar nav also mounts with partial store states in tests.
+        state.browserTabsByWorktree?.[FLOATING_TERMINAL_WORKTREE_ID] ?? []
       )
     )
   )

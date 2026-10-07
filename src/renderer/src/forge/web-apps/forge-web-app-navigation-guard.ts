@@ -50,8 +50,12 @@ function attachNavigationGuard(browserTabId: string, entry: ForgeWebAppEntry): v
 
 /** Watches floating browser tabs and attaches the pinned-app navigation guard as they mount. */
 export function installForgeWebAppNavigationGuards(): () => void {
+  // Why: the sidebar nav also mounts against partial store states (tests); skip there.
+  if (typeof useAppStore.subscribe !== 'function') {
+    return () => {}
+  }
   return useAppStore.subscribe((state) => {
-    const tabs = state.browserTabsByWorktree[FLOATING_TERMINAL_WORKTREE_ID] ?? []
+    const tabs = state.browserTabsByWorktree?.[FLOATING_TERMINAL_WORKTREE_ID] ?? []
     for (const tab of tabs) {
       const entry = matchEntryForUrl(tab.url)
       if (entry) {

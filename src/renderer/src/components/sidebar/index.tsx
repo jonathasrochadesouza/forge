@@ -2,27 +2,24 @@ import React, { useEffect, useMemo } from 'react'
 import { useAppStore } from '@/store'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { useSidebarResize } from '@/hooks/useSidebarResize'
-import SidebarHeader from './SidebarHeader'
 import SidebarNav from './SidebarNav'
 import SetupScriptPromptCard from './SetupScriptPromptCard'
-import WorktreeList from './WorktreeList'
 import SidebarToolbar from './SidebarToolbar'
 import WorkspaceKanbanDrawer from './WorkspaceKanbanDrawer'
-import type { VirtualizedScrollAnchor } from '@/hooks/useVirtualizedScrollAnchor'
 import { cn } from '@/lib/utils'
 import { FolderPlus, Loader2 } from 'lucide-react'
-import { ActivityThreadCollapseContext } from '@/components/activity/activity-thread-collapse-context'
 import { useSidebarProjectDrop } from './useSidebarProjectDrop'
 import { useWorkspaceBoardPanel } from './useWorkspaceBoardPanel'
-import { useWorkspaceRevealBodyRedirect } from './use-workspace-reveal-body-redirect'
 import { resolveLeftSidebarStyleVariables } from '@/lib/left-sidebar-appearance'
 import { useSystemPrefersDark } from '@/components/terminal-pane/use-system-prefers-dark'
 import { lazyWithRetry } from '@/lib/lazy-with-retry'
 import { LocalGitToolchainScanBanner } from './LocalGitToolchainScanBanner'
+import { ForgeProjectsFocusFooterCard } from '../../forge/sidebars/ForgeProjectsFocusFooterCard'
 
 // Why lazy: the Agents list pulls the whole activity pipeline (virtualizer, markdown
 // previews, thread derivation); users on the workspace view should not load or render any of it.
-const SidebarAgentsList = lazyWithRetry(() => import('./SidebarAgentsList'))
+// (It is hosted inside the forge secondary sidebar — ForgeActivitySidebarPanel — since the
+// projects tree moved there.)
 
 const WorktreeMetaDialog = lazyWithRetry(() => import('./WorktreeMetaDialog'))
 const RemoveFolderDialog = lazyWithRetry(() => import('./RemoveFolderDialog'))
@@ -40,53 +37,16 @@ export const WORKTREE_SIDEBAR_RESIZE_HANDLE_CLASS_NAME =
 export const WORKTREE_SIDEBAR_RESIZE_HANDLE_LINE_CLASS_NAME =
   'h-full w-px bg-transparent transition-colors group-hover:bg-ring/50 group-active:bg-ring'
 
-type SidebarProps = {
-  worktreeScrollOffsetRef: React.MutableRefObject<number>
-  worktreeScrollAnchorRef: React.MutableRefObject<VirtualizedScrollAnchor>
-}
-
-function Sidebar({
-  worktreeScrollOffsetRef,
-  worktreeScrollAnchorRef
-}: SidebarProps): React.JSX.Element {
+function Sidebar(): React.JSX.Element {
   const sidebarOpen = useAppStore((s) => s.sidebarOpen)
   const sidebarWidth = useAppStore((s) => s.sidebarWidth)
   const setSidebarWidth = useAppStore((s) => s.setSidebarWidth)
   const repos = useAppStore((s) => s.repos)
   const startupWorktreeRefreshCompleted = useAppStore((s) => s.startupWorktreeRefreshCompleted)
   const settings = useAppStore((s) => s.settings)
-  const sidebarBody = useAppStore((s) => s.sidebarBody ?? 'workspaces')
   const showAgentDashboard = settings?.experimentalAgentDashboardPopout === true
   const agentDashboardDrawerOpen = useAppStore((s) => s.agentDashboardDrawerOpen)
   const setAgentDashboardDrawerOpen = useAppStore((s) => s.setAgentDashboardDrawerOpen)
-  const agentReadFilter = useAppStore((s) => s.agentsReadFilter)
-  const setAgentReadFilter = useAppStore((s) => s.setAgentsReadFilter)
-  const agentGroupBy = useAppStore((s) => s.agentsGroupBy)
-  const setAgentGroupBy = useAppStore((s) => s.setAgentsGroupBy)
-  const [agentQuery, setAgentQuery] = React.useState('')
-  const [agentOptionsTarget, setAgentOptionsTarget] = React.useState<HTMLDivElement | null>(null)
-  const agentsScrollTopRef = React.useRef(0)
-  // Held here so collapsed groups (and the layout the saved scrollTop assumes)
-  // survive the Agents list unmounting on sidebar body switches.
-  const [agentsCollapsedGroupKeys, setAgentsCollapsedGroupKeys] = React.useState<
-    ReadonlySet<string>
-  >(() => new Set())
-  const agentsCollapseState = useMemo(
-    () => ({
-      collapsedGroupKeys: agentsCollapsedGroupKeys,
-      onToggleGroupCollapse: (groupKey: string) =>
-        setAgentsCollapsedGroupKeys((prev) => {
-          const next = new Set(prev)
-          if (next.has(groupKey)) {
-            next.delete(groupKey)
-          } else {
-            next.add(groupKey)
-          }
-          return next
-        })
-    }),
-    [agentsCollapsedGroupKeys]
-  )
   const fetchAllWorktrees = useAppStore((s) => s.fetchAllWorktrees)
   const activeModal = useAppStore((s) => s.activeModal)
   const statusBarVisible = useAppStore((s) => s.statusBarVisible)
@@ -104,10 +64,7 @@ function Sidebar({
     toggleWorkspaceBoard,
     handleWorkspaceBoardOpenChange,
     setWorkspaceBoardMenuOpen,
-    closeWorkspaceBoard,
-    previewWorkspaceBoardFromDrag,
-    solidifyWorkspaceBoardFromDrag,
-    cancelWorkspaceBoardDragPreview
+    closeWorkspaceBoard
   } = useWorkspaceBoardPanel()
 
   const setLiveSidebarWidth = React.useCallback((width: number) => {
@@ -147,8 +104,6 @@ function Sidebar({
     onDraftWidthChange: setLiveSidebarWidth
   })
 
-  useWorkspaceRevealBodyRedirect(sidebarOpen && sidebarBody === 'agents')
-
   return (
     <TooltipProvider delayDuration={400}>
       <div
@@ -162,41 +117,13 @@ function Sidebar({
           <>
             {/* Fixed controls */}
             <SidebarNav />
-            <SidebarHeader
-              onWorkspaceBoardMenuOpenChange={setWorkspaceBoardMenuOpen}
-              activityOptionsTarget={setAgentOptionsTarget}
-            />
-            {sidebarBody === 'agents' ? (
-              <React.Suspense fallback={<div className="min-h-0 flex-1" />}>
-                <ActivityThreadCollapseContext.Provider value={agentsCollapseState}>
-                  <SidebarAgentsList
-                    readFilter={agentReadFilter}
-                    setReadFilter={setAgentReadFilter}
-                    groupBy={agentGroupBy}
-                    setGroupBy={setAgentGroupBy}
-                    query={agentQuery}
-                    setQuery={setAgentQuery}
-                    optionsTarget={agentOptionsTarget}
-                    scrollTopRef={agentsScrollTopRef}
-                  />
-                </ActivityThreadCollapseContext.Provider>
-              </React.Suspense>
-            ) : (
-              <>
-                <LocalGitToolchainScanBanner />
-                <WorktreeList
-                  scrollOffsetRef={worktreeScrollOffsetRef}
-                  scrollAnchorRef={worktreeScrollAnchorRef}
-                  workspaceBoardOpen={workspaceBoardOpen}
-                  onWorktreeCardClick={closeWorkspaceBoard}
-                  onWorkspaceBoardDragPreviewStart={previewWorkspaceBoardFromDrag}
-                  onWorkspaceBoardDragPreviewCommit={solidifyWorkspaceBoardFromDrag}
-                  onWorkspaceBoardDragPreviewCancel={cancelWorkspaceBoardDragPreview}
-                />
-              </>
-            )}
+            <LocalGitToolchainScanBanner />
 
-            <div className="relative shrink-0">
+            {/* Why: the projects tree lives in the forge secondary sidebar (ForgeProjectsSidebarPanel),
+            so this rail body has no list — it is navigation + the focused-project footer only. */}
+            {/* Why mt-auto: the rail body has no list anymore; the bottom cluster must stay
+            pinned at the end instead of hugging the last nav button. */}
+            <div className="relative mt-auto shrink-0">
               <SetupScriptPromptCard />
 
               {/* Fixed bottom toolbar */}
@@ -206,6 +133,9 @@ function Sidebar({
                 onWorkspaceBoardToggle={toggleWorkspaceBoard}
               />
             </div>
+
+            {/* Forge: focused-project card, pinned at the very end of the rail. */}
+            <ForgeProjectsFocusFooterCard />
           </>
         )}
 
@@ -280,4 +210,6 @@ function Sidebar({
   )
 }
 
-export default React.memo(Sidebar)
+// Why no React.memo: the sidebar has no props anymore, and memo would freeze it against
+// parent-driven rerenders (its data all arrives via its own store subscriptions).
+export default Sidebar

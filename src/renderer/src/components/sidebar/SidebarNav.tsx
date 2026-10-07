@@ -13,6 +13,7 @@ import { SetupGuideSidebarEntry } from './SetupGuideSidebarEntry'
 import { SidebarTaskNavButton } from './SidebarTaskNavButton'
 import { ForgeWebAppFavoriteSidebarEntry } from '../../forge/web-apps/ForgeWebAppFavoriteSidebarEntry'
 import { ForgeWebAppSidebarEntry } from '../../forge/web-apps/ForgeWebAppSidebarEntry'
+import { ForgeSecondarySidebarNavEntry } from '../../forge/sidebars/ForgeSecondarySidebarNavEntry'
 import { HideSidebarMenu } from './sidebar-nav-controls'
 import { translate } from '@/i18n/i18n'
 import { lazyWithRetry } from '@/lib/lazy-with-retry'
@@ -290,6 +291,7 @@ const SidebarNav = React.memo(function SidebarNav() {
           <HideSidebarMenu onHide={hideMobileButton} />
         </ContextMenu>
       ) : null}
+      <ForgeSecondarySidebarNavEntry />
     </div>
   )
 })
