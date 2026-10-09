@@ -8,13 +8,19 @@ import {
   ContextMenuTrigger
 } from '@/components/ui/context-menu'
 import { translate } from '@/i18n/i18n'
+import { ForgeSidebarIconBadge, ForgeSidebarIconButton } from '../sidebars/ForgeSidebarIconButton'
 import { getForgeWebAppEntry } from '../../../../shared/forge-web-app-registry'
 import { ForgeWebAppBrandGlyph } from './forge-web-app-brand-icons'
 import { setForgeWebAppFavoriteId, useForgeWebAppFavorite } from './forge-web-app-favorite'
 import { openForgeWebApp } from './forge-web-app-launch'
 import { useForgeWebAppUnreadCounts } from './use-forge-web-app-unread-counts'
 
-export function ForgeWebAppFavoriteSidebarEntry(): React.JSX.Element | null {
+export function ForgeWebAppFavoriteSidebarEntry({
+  compact = false
+}: {
+  /** Icon-only rendering for the collapsed sidebar rail. */
+  compact?: boolean
+}): React.JSX.Element | null {
   const favoriteId = useForgeWebAppFavorite()
   const unreadCounts = useForgeWebAppUnreadCounts()
   const entry = favoriteId ? getForgeWebAppEntry(favoriteId) : undefined
@@ -22,16 +28,42 @@ export function ForgeWebAppFavoriteSidebarEntry(): React.JSX.Element | null {
     return null
   }
   const unreadCount = unreadCounts[entry.id] ?? 0
+  const openLabel = translate(
+    'auto.forge.web-apps.ForgeWebAppFavoriteSidebarEntry.open',
+    'Open pinned app'
+  )
+  if (compact) {
+    return (
+      <ContextMenu>
+        <ContextMenuTrigger asChild>
+          <ForgeSidebarIconButton
+            // Why: the expanded row's accessible name is the fixed "Open pinned app"; the rail has
+            // no visible label, so the tooltip names the app instead.
+            label={entry.title}
+            badge={<ForgeSidebarIconBadge count={unreadCount} />}
+            onClick={() => void openForgeWebApp(entry.id)}
+          >
+            <ForgeWebAppBrandGlyph iconId={entry.iconId} className="size-4" strokeWidth={1.75} />
+          </ForgeSidebarIconButton>
+        </ContextMenuTrigger>
+        <ContextMenuContent>
+          <ContextMenuItem onSelect={() => setForgeWebAppFavoriteId(null)}>
+            {translate(
+              'auto.forge.web-apps.ForgeWebAppFavoriteSidebarEntry.remove',
+              'Remove from favorites'
+            )}
+          </ContextMenuItem>
+        </ContextMenuContent>
+      </ContextMenu>
+    )
+  }
   return (
     <ContextMenu>
       <ContextMenuTrigger asChild>
         <button
           type="button"
           onClick={() => void openForgeWebApp(entry.id)}
-          aria-label={translate(
-            'auto.forge.web-apps.ForgeWebAppFavoriteSidebarEntry.open',
-            'Open pinned app'
-          )}
+          aria-label={openLabel}
           className="group flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[13px] font-medium tracking-tight text-worktree-sidebar-foreground/60 transition-colors hover:bg-worktree-sidebar-foreground/8"
         >
           <ForgeWebAppBrandGlyph

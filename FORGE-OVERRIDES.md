@@ -29,5 +29,9 @@ Format: `<file> — <what we changed> — <why> — <date>`
 
 | src/renderer/src/i18n/locales/en.json + src/renderer/src/i18n/en-runtime-required.json | chaves `auto.forge.sidebars.*`/`auto.forge.web-apps.*` extraídas pelo i18next-cli (extract --sync-primary) e en-runtime-required regerado (inclui chaves de favorito, remove 'thinking' cujo call site passa fallback); inclui re-serialização do gerador (escapes `\u2014`→`—`, reindent) | catálogo do tradutor e boot bundle devem cobrir as strings dos componentes forge; output do pipeline sancionado de i18n, não edição manual (user-approved) | 2026-10-07 |
 
+| src/renderer/src/app-shell/AppWorkspaceShell.tsx | left/center/right regions wrapped in `<ForgePanelFrame>`; sidebar column + `ForgeSecondarySidebarDock` now share the left frame; the collapsed-sidebar header moved from the `w-0` wrapper into the frame `overlay`; `<ForgeCollapsedSidebarRail />` rendered beside `<Sidebar />` when collapsed; outer row gets `forge-panel-row` | FORGE-94 (icon rail needs real layout width instead of `w-0`) and FORGE-95 (rounded floating panels, ticket-listed file) (user-approved via the stories) | 2026-10-09 |
+| src/renderer/src/components/tab-group/TabGroupSplitLayout.tsx | dropped `border-l border-border` from the drag-root wrapper | the center panel frame paints the seam; keeping it would stack a 2px bar (FORGE-95) | 2026-10-09 |
+| src/renderer/src/components/right-sidebar/index.tsx | removed the inline `borderLeft` on the panel content surface | the right panel frame paints the border (FORGE-95); keeping it would double the line | 2026-10-09 |
+
 No other upstream file has been modified. Keep it that way — if you add an entry,
 you must have first confirmed the file is on the Mutation Whitelist in FORGE.md.

@@ -1,0 +1,110 @@
+/* FORGE-95 — floating panel chrome (VS Code "Modern UI" style). Tokens and rules are documented in
+   docs/forge/panel-chrome.md. Every colour comes from an existing theme token. */
+
+:root {
+  /* Same scale step as Tailwind's rounded-xl (--radius-xl = 1.4 × --radius). */
+  --forge-panel-radius: calc(var(--radius) * 1.4);
+  --forge-panel-gap: 6px;
+  --forge-panel-inset: 4px;
+  --forge-panel-border-width: 1px;
+  /* Collapsed-sidebar icon rail (FORGE-94): 32px buttons + 2 × 6px padding. */
+  --forge-rail-width: 44px;
+  /* Window-left → center content-left when only the rail sits in the left panel: window inset,
+     rail, the gap, and three borders (left panel × 2, center × 1). */
+  --forge-panel-rail-footprint: calc(
+    var(--forge-panel-inset) + var(--forge-rail-width) + var(--forge-panel-gap) + 3 *
+      var(--forge-panel-border-width)
+  );
+  /* Concentric rule: content clipped inside the border sits one border-width deeper, so its
+     radius is the outer radius minus that offset, clamped so it never goes negative. */
+  --forge-panel-radius-inner: max(
+    0px,
+    calc(var(--forge-panel-radius) - var(--forge-panel-border-width))
+  );
+  --forge-panel-gutter: color-mix(in srgb, var(--foreground) 4%, var(--background));
+}
+
+.forge-panel-row {
+  background: var(--forge-panel-gutter);
+}
+
+[data-forge-panel] {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  margin-top: var(--forge-panel-gap);
+  margin-bottom: var(--forge-panel-inset);
+  border: var(--forge-panel-border-width) solid var(--border);
+  border-radius: var(--forge-panel-radius);
+}
+
+[data-forge-panel='left'] {
+  flex: 0 0 auto;
+  margin-left: var(--forge-panel-inset);
+  background: var(--worktree-sidebar);
+}
+
+[data-forge-panel='center'] {
+  flex: 1 1 0;
+  margin-left: var(--forge-panel-inset);
+  margin-right: var(--forge-panel-inset);
+  background: var(--background);
+}
+
+[data-forge-panel='center'][data-forge-panel-leading] {
+  margin-left: var(--forge-panel-gap);
+}
+
+[data-forge-panel='center'][data-forge-panel-trailing] {
+  margin-right: var(--forge-panel-gap);
+}
+
+/* Why no top margin: the right sidebar spans the full window height beside the titlebar. */
+[data-forge-panel='right'] {
+  flex: 0 0 auto;
+  margin-top: 0;
+  margin-right: var(--forge-panel-inset);
+  background: var(--sidebar);
+}
+
+/* Why: with the titlebar embedded in the panels' top rows, native traffic lights and the 36px
+   header bands stay pixel-aligned only if the panels start at the window top. */
+[data-forge-panel][data-forge-panel-flush-top] {
+  margin-top: 0;
+  border-top-width: 0;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+
+/* Why: the right sidebar stays mounted at zero width while closed. */
+[data-forge-panel][data-forge-panel-collapsed] {
+  margin: 0;
+  border-width: 0;
+}
+
+.forge-panel-clip {
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  border-radius: var(--forge-panel-radius-inner);
+}
+
+[data-forge-panel-flush-top] > .forge-panel-clip {
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+
+/* Sidebar + dock read as one panel: a straight, gap-free seam between them. */
+[data-forge-panel='left'] [data-forge-secondary-sidebar] {
+  border-left: var(--forge-panel-border-width) solid var(--border);
+}
+
+/* Why: the sidebar's resize handle straddles its right edge, but the panel clips overflow, so
+   keep the whole handle inside the panel where it stays grabbable. */
+[data-forge-panel='left'] [data-sidebar-resize-handle] {
+  right: 0;
+  width: 8px;
+}

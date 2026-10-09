@@ -2,6 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest'
 import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react'
 import { FLOATING_TERMINAL_WORKTREE_ID } from '../../../../shared/constants'
+import { TooltipProvider } from '@/components/ui/tooltip'
 import { ForgeWebAppFavoriteSidebarEntry } from './ForgeWebAppFavoriteSidebarEntry'
 
 type FavoriteTestStoreState = {
@@ -85,5 +86,58 @@ describe('ForgeWebAppFavoriteSidebarEntry', () => {
       expect(screen.queryByRole('button', { name: 'Open pinned app' })).toBeNull()
     })
     expect(window.localStorage.getItem('orca.forge.webAppFavorite.v1')).toBeNull()
+  })
+
+  describe('compact (collapsed rail)', () => {
+    function renderCompact(): void {
+      render(
+        <TooltipProvider delayDuration={0}>
+          <ForgeWebAppFavoriteSidebarEntry compact />
+        </TooltipProvider>
+      )
+    }
+
+    it('renders nothing when no app is favorited', () => {
+      renderCompact()
+
+      expect(screen.queryByRole('button')).toBeNull()
+    })
+
+    it('renders an icon-only button named by the app and opens it on click', async () => {
+      setForgeWebAppFavoriteId('teams')
+      renderCompact()
+
+      const button = screen.getByRole('button', { name: 'Teams' })
+      expect(button.textContent).toBe('')
+
+      fireEvent.click(button)
+      await waitFor(() => {
+        expect(mocks.openForgeWebApp).toHaveBeenCalledWith('teams')
+      })
+    })
+
+    it('pins the unread count to the icon', () => {
+      setForgeWebAppFavoriteId('teams')
+      mocks.tabsByWorktree = {
+        [FLOATING_TERMINAL_WORKTREE_ID]: [
+          { id: 'tab-1', url: 'https://teams.microsoft.com/', title: '(5) Microsoft Teams' }
+        ]
+      }
+      renderCompact()
+
+      expect(screen.getByRole('button', { name: 'Teams' }).textContent).toBe('5')
+    })
+
+    it('still offers removing the favorite from the context menu', async () => {
+      setForgeWebAppFavoriteId('teams')
+      renderCompact()
+
+      fireEvent.contextMenu(screen.getByRole('button', { name: 'Teams' }))
+      fireEvent.click(screen.getByText('Remove from favorites'))
+
+      await waitFor(() => {
+        expect(screen.queryByRole('button', { name: 'Teams' })).toBeNull()
+      })
+    })
   })
 })

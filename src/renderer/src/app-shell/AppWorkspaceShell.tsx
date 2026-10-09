@@ -7,6 +7,13 @@ import { RecoverableRenderErrorBoundary } from '../components/error-boundaries/R
 import { FloatingTerminalToggleButton } from '../components/floating-terminal/FloatingTerminalToggleButton'
 import { TerminalWorkbenchContainer } from '../components/TerminalWorkbenchContainer'
 import { ForgeSecondarySidebarDock } from '../forge/sidebars/ForgeSecondarySidebarDock'
+import { ForgeCollapsedSidebarRail } from '../forge/sidebars/ForgeCollapsedSidebarRail'
+import { ForgePanelFrame } from '../forge/panels/ForgePanelFrame'
+import {
+  resolveCollapsedHeaderReserve,
+  resolveForgePanelLayout
+} from '../forge/panels/forge-panel-layout'
+import { useForgeSecondarySidebarOpen } from '../forge/sidebars/forge-secondary-sidebar-store'
 import { WORKSPACE_TOP_CHROME_HEIGHT } from '../components/sidebar/workspace-chrome-metrics'
 import { TitlebarLeftControls } from './TitlebarLeftControls'
 import { RightSidebarToggle, TitlebarMainStrip } from './TitlebarMainStrip'
@@ -82,6 +89,23 @@ export function AppWorkspaceShell(props: {
   const { layout, floatingWorkspace } = props
   const titlebarLeftControls = <TitlebarLeftControls layout={layout} />
   const titlebarMainStrip = <TitlebarMainStrip layout={layout} />
+  const forgeDockOpen = useForgeSecondarySidebarOpen()
+  const panels = resolveForgePanelLayout({
+    showSidebar: layout.showSidebar,
+    titlebarEmbedded: layout.leftTitlebarChromeLayout.shouldMount,
+    sidebarOpen: layout.sidebarOpen,
+    showRightSidebar: layout.showRightSidebarControls,
+    rightSidebarOpen: layout.rightSidebarOpen
+  })
+  // Forge: a collapsed sidebar keeps an icon rail (FORGE-94) instead of vanishing.
+  const collapsedRail =
+    layout.showSidebar && !layout.sidebarOpen ? (
+      <ForgeCollapsedSidebarRail
+        reserveTitlebarHeight={
+          layout.leftTitlebarChromeLayout.shouldMount ? WORKSPACE_TOP_CHROME_HEIGHT : 0
+        }
+      />
+    ) : null
 
   return (
     // Why: workspace activation is a hot path; activeWorktreeId in reset keys would remount whole surfaces during wake.
@@ -95,7 +119,7 @@ export function AppWorkspaceShell(props: {
         'The app is still running. Retry the shell or use the menu to report the crash details.'
       )}
     >
-      <div className="flex flex-row flex-1 min-h-0 overflow-hidden">
+      <div className="forge-panel-row flex flex-row flex-1 min-h-0 overflow-hidden">
         {/* Why: keep the non-workspace titlebar inside this left+center wrapper so it doesn't span over the right-sidebar column. */}
         <div className="flex flex-col flex-1 min-w-0 min-h-0">
           {/* Why: workspace view drops the full-width titlebar so tab groups extend to the top; settings/landing/tasks keep it. */}
@@ -106,135 +130,162 @@ export function AppWorkspaceShell(props: {
             </div>
           ) : null}
           <div className="flex flex-row flex-1 min-h-0 overflow-hidden">
-            {layout.showSidebar ? (
-              layout.leftTitlebarChromeLayout.shouldMount ? (
-                /* Why: when the sidebar is collapsed, take this titlebar-height header out of flex layout so the terminal/editor reclaim the left edge. */
-                <div
-                  className={`flex min-h-0 flex-col shrink-0${layout.sidebarOpen ? '' : ' relative w-0 overflow-visible'}`}
-                >
-                  <div
+            {/* Why (Forge): the sidebar column and the secondary dock share one floating panel, so the
+            pair reads as a single rounded surface with a straight seam; dock closed → the column
+            alone gets all four corners. */}
+            {panels.showLeft ? (
+              <ForgePanelFrame
+                region="left"
+                flushTop={panels.flushTop}
+                overlay={
+                  layout.leftTitlebarChromeLayout.isFloating ? (
+                    // Why: the collapsed header floats over the panels, so it lives outside the panel's clip box.
                     // Why: floating titlebar-left occludes the center column's border-l seam; border-r restores that line, w-max sizes it to its own controls.
-                    className={`titlebar-left${
-                      layout.leftTitlebarChromeLayout.isFloating
-                        ? ' titlebar-left-floating absolute top-0 left-0 z-10 w-max border-r border-border'
-                        : ''
-                    }`}
-                    style={{
-                      // Why: custom sidebar appearances are scoped to the sidebar root; mirror those vars onto the header in the same left-column panel.
-                      ...(layout.sidebarOpen ? layout.leftSidebarStyle : undefined),
-                      // Why: size from the wrapper's live width so the header tracks in-flight drag resizes (persisted to Zustand only on mouseup).
-                      width: layout.sidebarOpen ? '100%' : undefined
-                    }}
-                  >
-                    {titlebarLeftControls}
-                  </div>
-                  {/* Why: flex-1/min-h-0 slot needed under the fixed 36px header, else the sidebar collapses to content height and loses its scroll viewport. */}
-                  <div className="flex min-h-0 flex-1">
-                    <WorktreeSidebar layout={layout} />
-                  </div>
-                </div>
-              ) : (
-                <WorktreeSidebar layout={layout} />
-              )
-            ) : null}
-            {/* Why: the forge secondary sidebar is a real flex column between the left sidebar
-            and the content, so it pushes the center the same way the left sidebar does; it
-            follows the same visibility rule as the left sidebar itself. */}
-            {layout.showSidebar ? (
-              <ForgeSecondarySidebarDock
-                reserveTitlebarHeight={
-                  layout.leftTitlebarChromeLayout.shouldMount ? WORKSPACE_TOP_CHROME_HEIGHT : 0
+                    <div className="titlebar-left titlebar-left-floating absolute top-0 left-0 z-10 w-max border-r border-border">
+                      {titlebarLeftControls}
+                    </div>
+                  ) : null
                 }
-              />
-            ) : null}
-            <div className="flex flex-col flex-1 min-w-0 min-h-0 overflow-hidden">
-              {/* Why: automations/artifacts own their page headers; the stacked titlebar would be an empty 36px stripe. */}
-              {layout.stackedSidebarOpen &&
-              layout.activeView !== 'automations' &&
-              layout.activeView !== 'artifacts' ? (
-                <div className="titlebar">{titlebarMainStrip}</div>
-              ) : null}
-              <div className="relative flex flex-1 min-w-0 min-h-0 overflow-hidden">
-                {/* Why: match the RightSidebar header's 36px/top-0 so the toggle's vertical center is identical open vs closed — else the icon jitters. */}
-                {layout.workspaceChromeActive && !layout.rightSidebarOpen && (
-                  <div
-                    className="absolute top-0 z-10 flex items-center h-[36px]"
-                    style={
-                      {
-                        // Why: --window-controls-width keeps the toggle clear of the fixed window-controls overlay (138px on custom chrome, 0px otherwise); no internal spacer — one would cover the pane-actions Ellipsis button with an unclickable div.
-                        right: 'var(--window-controls-width)',
-                        WebkitAppRegion: 'no-drag'
-                      } as React.CSSProperties
-                    }
-                  >
-                    {layout.showRightSidebarControls ? <RightSidebarToggle /> : null}
+              >
+                {layout.leftTitlebarChromeLayout.shouldMount ? (
+                  <div className="flex min-h-0 flex-col shrink-0">
+                    {layout.leftTitlebarChromeLayout.isFloating ? null : (
+                      <div
+                        className="titlebar-left"
+                        style={{
+                          // Why: custom sidebar appearances are scoped to the sidebar root; mirror those vars onto the header in the same left-column panel.
+                          ...layout.leftSidebarStyle,
+                          // Why: size from the wrapper's live width so the header tracks in-flight drag resizes (persisted to Zustand only on mouseup).
+                          width: '100%'
+                        }}
+                      >
+                        {titlebarLeftControls}
+                      </div>
+                    )}
+                    {/* Why: flex-1/min-h-0 slot needed under the fixed 36px header, else the sidebar collapses to content height and loses its scroll viewport. */}
+                    <div className="flex min-h-0 flex-1">
+                      <WorktreeSidebar layout={layout} />
+                      {collapsedRail}
+                    </div>
                   </div>
+                ) : (
+                  <>
+                    <WorktreeSidebar layout={layout} />
+                    {collapsedRail}
+                  </>
                 )}
-                <div className="flex flex-1 min-w-0 min-h-0 flex-col">
-                  {layout.shouldMountTerminalWorkbench ? (
-                    <TerminalWorkbenchContainer isVisible={layout.terminalWorkbenchVisible}>
-                      <Suspense fallback={null}>
-                        <RecoverableRenderErrorBoundary
-                          boundaryId="terminal.workbench"
-                          surface="terminal-workbench"
-                          resetKey="terminal"
-                          title={translate(
-                            'auto.App.5a9519aef0',
-                            'The workspace workbench hit an error.'
-                          )}
-                          description={translate(
-                            'auto.App.98d4ea2823',
-                            'Terminal, browser, or editor rendering failed in this workspace. Retry to remount it.'
-                          )}
-                        >
-                          <Terminal />
-                        </RecoverableRenderErrorBoundary>
-                      </Suspense>
-                    </TerminalWorkbenchContainer>
-                  ) : null}
-                  <Suspense fallback={null}>
-                    <RecoverableRenderErrorBoundary
-                      boundaryId={`page.${layout.activeView}`}
-                      surface="page"
-                      resetKey={layout.activeView}
-                      title={translate('auto.App.b7a714db1e', 'This page hit an error.')}
-                      description={translate(
-                        'auto.App.03a14f6b5b',
-                        'Retry the page or navigate to another Orca surface.'
-                      )}
-                    >
-                      <ActivePage layout={layout} />
-                    </RecoverableRenderErrorBoundary>
-                  </Suspense>
-                </div>
-                {floatingWorkspace.showToggleButton ? (
-                  <FloatingTerminalToggleButton
-                    open={floatingWorkspace.open}
-                    onToggle={() => floatingWorkspace.setOpenWithFocus((open) => !open)}
-                  />
+                {/* Why: the forge secondary sidebar is a real flex column next to the left sidebar,
+                so it pushes the content the same way the left sidebar does; it follows the same
+                visibility rule as the left sidebar itself. */}
+                <ForgeSecondarySidebarDock
+                  reserveTitlebarHeight={
+                    layout.leftTitlebarChromeLayout.shouldMount ? WORKSPACE_TOP_CHROME_HEIGHT : 0
+                  }
+                />
+              </ForgePanelFrame>
+            ) : null}
+            <ForgePanelFrame
+              region="center"
+              flushTop={panels.flushTop}
+              hasLeadingPanel={panels.centerHasLeading}
+              hasTrailingPanel={panels.centerHasTrailing}
+              collapsedHeaderReserve={resolveCollapsedHeaderReserve({
+                floatingHeader: panels.floatingHeader,
+                dockOpen: forgeDockOpen,
+                headerWidth: layout.collapsedSidebarHeaderWidth
+              })}
+            >
+              <div className="flex flex-col flex-1 min-w-0 min-h-0 overflow-hidden">
+                {/* Why: automations/artifacts own their page headers; the stacked titlebar would be an empty 36px stripe. */}
+                {layout.stackedSidebarOpen &&
+                layout.activeView !== 'automations' &&
+                layout.activeView !== 'artifacts' ? (
+                  <div className="titlebar">{titlebarMainStrip}</div>
                 ) : null}
+                <div className="relative flex flex-1 min-w-0 min-h-0 overflow-hidden">
+                  {/* Why: match the RightSidebar header's 36px/top-0 so the toggle's vertical center is identical open vs closed — else the icon jitters. */}
+                  {layout.workspaceChromeActive && !layout.rightSidebarOpen && (
+                    <div
+                      className="absolute top-0 z-10 flex items-center h-[36px]"
+                      style={
+                        {
+                          // Why: --window-controls-width keeps the toggle clear of the fixed window-controls overlay (138px on custom chrome, 0px otherwise); no internal spacer — one would cover the pane-actions Ellipsis button with an unclickable div.
+                          right: 'var(--window-controls-width)',
+                          WebkitAppRegion: 'no-drag'
+                        } as React.CSSProperties
+                      }
+                    >
+                      {layout.showRightSidebarControls ? <RightSidebarToggle /> : null}
+                    </div>
+                  )}
+                  <div className="flex flex-1 min-w-0 min-h-0 flex-col">
+                    {layout.shouldMountTerminalWorkbench ? (
+                      <TerminalWorkbenchContainer isVisible={layout.terminalWorkbenchVisible}>
+                        <Suspense fallback={null}>
+                          <RecoverableRenderErrorBoundary
+                            boundaryId="terminal.workbench"
+                            surface="terminal-workbench"
+                            resetKey="terminal"
+                            title={translate(
+                              'auto.App.5a9519aef0',
+                              'The workspace workbench hit an error.'
+                            )}
+                            description={translate(
+                              'auto.App.98d4ea2823',
+                              'Terminal, browser, or editor rendering failed in this workspace. Retry to remount it.'
+                            )}
+                          >
+                            <Terminal />
+                          </RecoverableRenderErrorBoundary>
+                        </Suspense>
+                      </TerminalWorkbenchContainer>
+                    ) : null}
+                    <Suspense fallback={null}>
+                      <RecoverableRenderErrorBoundary
+                        boundaryId={`page.${layout.activeView}`}
+                        surface="page"
+                        resetKey={layout.activeView}
+                        title={translate('auto.App.b7a714db1e', 'This page hit an error.')}
+                        description={translate(
+                          'auto.App.03a14f6b5b',
+                          'Retry the page or navigate to another Orca surface.'
+                        )}
+                      >
+                        <ActivePage layout={layout} />
+                      </RecoverableRenderErrorBoundary>
+                    </Suspense>
+                  </div>
+                  {floatingWorkspace.showToggleButton ? (
+                    <FloatingTerminalToggleButton
+                      open={floatingWorkspace.open}
+                      onToggle={() => floatingWorkspace.setOpenWithFocus((open) => !open)}
+                    />
+                  ) : null}
+                </div>
               </div>
-            </div>
+            </ForgePanelFrame>
           </div>
         </div>
         {/* Why: keep the shell mounted for layout stability (heavy panels disconnect while closed); unmount on the distraction-free tasks view. */}
         {layout.showRightSidebarControls ? (
-          <RecoverableRenderErrorBoundary
-            boundaryId="right-sidebar"
-            surface="right-sidebar"
-            resetKey={
-              layout.rightSidebarTab === 'explorer'
-                ? `${layout.rightSidebarTab}:${layout.rightSidebarExplorerView}`
-                : layout.rightSidebarTab
-            }
-            title={translate('auto.App.ed6b168d00', 'The right sidebar hit an error.')}
-            description={translate(
-              'auto.App.8d1e160ed1',
-              'Retry the sidebar or switch tabs to reload this surface.'
-            )}
-          >
-            <RightSidebar />
-          </RecoverableRenderErrorBoundary>
+          <ForgePanelFrame region="right" flushTop collapsed={panels.rightCollapsed}>
+            <RecoverableRenderErrorBoundary
+              boundaryId="right-sidebar"
+              surface="right-sidebar"
+              resetKey={
+                layout.rightSidebarTab === 'explorer'
+                  ? `${layout.rightSidebarTab}:${layout.rightSidebarExplorerView}`
+                  : layout.rightSidebarTab
+              }
+              title={translate('auto.App.ed6b168d00', 'The right sidebar hit an error.')}
+              description={translate(
+                'auto.App.8d1e160ed1',
+                'Retry the sidebar or switch tabs to reload this surface.'
+              )}
+            >
+              <RightSidebar />
+            </RecoverableRenderErrorBoundary>
+          </ForgePanelFrame>
         ) : null}
       </div>
     </RecoverableRenderErrorBoundary>

@@ -1,3 +1,7 @@
+# Local backup files
+*.bak
+
+
 # Build artifacts
 tsconfig.*.tsbuildinfo
 

@@ -10,6 +10,7 @@ vi.mock('@/store', () => ({
 vi.mock('@/i18n/i18n', () => ({ translate: (_key: string, fallback: string) => fallback }))
 
 import { ForgeSecondarySidebarNavEntry } from './ForgeSecondarySidebarNavEntry'
+import { TooltipProvider } from '@/components/ui/tooltip'
 import {
   closeForgeSecondarySidebar,
   useForgeSecondarySidebar
@@ -71,5 +72,42 @@ describe('ForgeSecondarySidebarNavEntry', () => {
 
     expect(mocks.setSidebarOpen).toHaveBeenCalledWith(true)
     expect(renderedOpenState()).toBe(false)
+  })
+
+  describe('compact (collapsed rail)', () => {
+    function renderCompact(): void {
+      render(
+        <TooltipProvider delayDuration={0}>
+          <ForgeSecondarySidebarNavEntry compact />
+        </TooltipProvider>
+      )
+    }
+
+    it('renders an icon-only button named by its label', () => {
+      renderCompact()
+
+      const button = screen.getByRole('button', { name: 'Projects' })
+      expect(button.textContent).toBe('')
+      expect(button.getAttribute('aria-current')).toBeNull()
+    })
+
+    it('toggles the panel exactly like the expanded entry', () => {
+      renderCompact()
+
+      fireEvent.click(screen.getByRole('button', { name: 'Projects' }))
+      expect(mocks.setSidebarOpen).toHaveBeenCalledWith(false)
+      expect(renderedOpenState()).toBe(true)
+
+      mocks.setSidebarOpen.mockClear()
+      cleanup()
+      renderCompact()
+      expect(screen.getByRole('button', { name: 'Projects' }).getAttribute('aria-current')).toBe(
+        'page'
+      )
+
+      fireEvent.click(screen.getByRole('button', { name: 'Projects' }))
+      expect(mocks.setSidebarOpen).toHaveBeenCalledWith(true)
+      expect(renderedOpenState()).toBe(false)
+    })
   })
 })

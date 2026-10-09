@@ -10,8 +10,14 @@ import {
   useForgeSecondarySidebar
 } from './forge-secondary-sidebar-store'
 import { installForgeSecondarySidebarRevealBridge } from './forge-secondary-sidebar-reveal-bridge'
+import { ForgeSidebarIconButton } from './ForgeSidebarIconButton'
 
-export function ForgeSecondarySidebarNavEntry(): React.JSX.Element {
+export function ForgeSecondarySidebarNavEntry({
+  compact = false
+}: {
+  /** Icon-only rendering for the collapsed sidebar rail. */
+  compact?: boolean
+}): React.JSX.Element {
   const { open } = useForgeSecondarySidebar()
   const toggle = React.useCallback(() => {
     if (open) {
@@ -23,6 +29,18 @@ export function ForgeSecondarySidebarNavEntry(): React.JSX.Element {
   // Why: this entry mounts once with the sidebar, making it a convenient place to keep the
   // reveal bridge alive for the app's lifetime without a dedicated bootstrap hook.
   React.useEffect(() => installForgeSecondarySidebarRevealBridge(), [])
+
+  if (compact) {
+    return (
+      <ForgeSidebarIconButton
+        label={translate('auto.forge.sidebars.ForgeSecondarySidebarNavEntry.title', 'Projects')}
+        active={open}
+        onClick={toggle}
+      >
+        <FolderTree className="size-4" strokeWidth={open ? 2.25 : 1.75} />
+      </ForgeSidebarIconButton>
+    )
+  }
 
   return (
     <button
